@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ComicCraft</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main class="container">
+    <h1>ComicCraft</h1>
+    <p class="subtitle">AI Comic Story Creator powered by Gemini</p>
+    <form id="comicForm">
+      <label for="idea">Story idea</label>
+      <textarea id="idea" required placeholder="Example: A student discovers a robot in the college library"></textarea>
+      <label for="characters">Characters</label>
+      <input id="characters" placeholder="Example: Nila, a curious student; Robo, a friendly robot">
+      <label for="style">Style</label>
+      <select id="style">
+        <option value="funny">funny</option>
+        <option value="adventure">adventure</option>
+        <option value="emotional">emotional</option>
+        <option value="mystery">mystery</option>
+        <option value="fantasy">fantasy</option>
+        <option value="sci-fi">sci-fi</option>
+      </select>
+      <label for="panels">Panels</label>
+      <input id="panels" type="number" min="2" max="8" value="4">
+      <button id="submitBtn" type="submit">Generate Comic</button>
+    </form>
+    <div id="status"></div>
+    <section id="output"></section>
+  </main>
+  <script>
+    const form = document.getElementById("comicForm");
+    const output = document.getElementById("output");
+    const status = document.getElementById("status");
+    const submitBtn = document.getElementById("submitBtn");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      output.innerHTML = "";
+      status.textContent = "Generating comic...";
+      submitBtn.disabled = true;
+
+      const payload = {
+        idea: document.getElementById("idea").value.trim(),
+        characters: document.getElementById("characters").value.trim(),
+        style: document.getElementById("style").value,
+        panels: Number(document.getElementById("panels").value)
+      };
+
+      try {
+        const response = await fetch("/api/generate", {
+          method: "POST",
+          headers: {"Content-Type": "application/json"},
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.message || `Request failed (${response.status})`);
+        }
+        renderComic(data.result);
+        status.textContent = "";
+      } catch (error) {
+        status.textContent = "";
+        output.innerHTML = `<div class="error"><strong>Error:</strong> ${escapeHtml(error.message)}</div>`;
+      } finally {
+        submitBtn.disabled = false;
+      }
+    });
+
+    function renderComic(result) {
+      const title = result.title || "ComicCraft Story";
+      const summary = result.summary || "";
+      const panels = Array.isArray(result.panels) ? result.panels : [];
+
+      const header = document.createElement("div");
+      header.className = "story-header";
+      header.innerHTML = `<h2>${escapeHtml(title)}</h2><p class="story-summary">${escapeHtml(summary)}</p>`;
+      output.appendChild(header);
+
+      const grid = document.createElement("div");
+      grid.className = "panel-grid";
+
+      panels.forEach((panel, index) => {
+        const card = document.createElement("article");
+        card.className = "panel";
+        const number = panel.panel ?? index + 1;
+        const scene = panel.scene || "";
+        const dialogue = panel.dialogue || "";
+        card.innerHTML = `
+          <h3>Panel ${escapeHtml(String(number))}</h3>
+          <div class="scene">${escapeHtml(scene)}</div>
+          ${dialogue ? `<div class="dialogue">“${escapeHtml(dialogue)}”</div>` : ""}
+        `;
+        grid.appendChild(card);
+      });
+
+      output.appendChild(grid);
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+  </script>
+</body>
+</html>
