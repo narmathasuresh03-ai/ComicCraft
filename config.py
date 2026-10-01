@@ -1,7 +1,7 @@
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-ROOT_DIR = Path(__file__).resolve().parents
+ROOT_DIR = Path(__file__).resolve().parent
 
 class Settings(BaseSettings):
     gemini_api_key: str = ""
