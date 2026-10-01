@@ -4,7 +4,7 @@ import re
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from app.config import settings
+from config import settings
 
 router = APIRouter(prefix="/api")
 
